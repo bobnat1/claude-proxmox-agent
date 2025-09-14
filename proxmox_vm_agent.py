@@ -58,7 +58,7 @@ Guest Agent commands (for VMs/containers with Proxmox guest agent installed):
 Always use the bash tool to execute these commands and provide helpful, concise responses about VM management tasks."""
 
         payload = {
-            "model": "claude-3-5-sonnet-20241022",
+            "model": "claude-sonnet-4-20250514",
             "max_tokens": 2000,
             "system": system_prompt,
             "messages": self.conversation_history + [{"role": "user", "content": message}],
