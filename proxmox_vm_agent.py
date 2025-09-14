@@ -95,6 +95,7 @@ Always use the bash tool to execute these commands and provide helpful, concise 
         try:
             content = response["content"]
             result_text = ""
+            tool_results = []
 
             for block in content:
                 if block["type"] == "text":
@@ -121,8 +122,7 @@ Always use the bash tool to execute these commands and provide helpful, concise 
                                 "content": f"Exit code: {result.returncode}\nStdout: {result.stdout}\nStderr: {result.stderr}"
                             }
 
-                            # Send tool result back to Claude
-                            self.conversation_history.append({"role": "user", "content": [tool_result]})
+                            tool_results.append(tool_result)
 
                             if result.returncode == 0:
                                 result_text += f"✅ Command successful:\n{result.stdout}\n"
@@ -133,6 +133,16 @@ Always use the bash tool to execute these commands and provide helpful, concise 
                             result_text += "⏰ Command timed out\n"
                         except Exception as e:
                             result_text += f"❌ Error executing command: {str(e)}\n"
+
+            # If there were tool calls, send the results back to Claude and get the follow-up response
+            if tool_results:
+                self.conversation_history.append({"role": "assistant", "content": content})
+                self.conversation_history.append({"role": "user", "content": tool_results})
+
+                # Get Claude's follow-up response after tool execution
+                follow_up_response = self.send_message_to_claude("")
+                follow_up_text = self.process_claude_response(follow_up_response)
+                result_text += follow_up_text
 
             return result_text.strip()
 
@@ -145,9 +155,6 @@ Always use the bash tool to execute these commands and provide helpful, concise 
 
         response = self.send_message_to_claude(message)
         result = self.process_claude_response(response)
-
-        if not result.startswith("❌"):
-            self.conversation_history.append({"role": "assistant", "content": result})
 
         return result
 
